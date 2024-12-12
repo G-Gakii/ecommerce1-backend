@@ -11,6 +11,7 @@ import * as argon2 from "argon2";
 import { generateToken, refreshTokenfn } from "../token/token";
 import { JwtPayload } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
+
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { email, password, role } = req.body;
@@ -27,6 +28,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const hashedPassword = await argon2.hash(password);
     const user = await pool.query(addUserQuery, [email, hashedPassword, role]);
     const userId = user.rows[0].id;
+
     const accessToken = generateToken(userId);
     const refreshToken = refreshTokenfn(userId);
     const hashedRefreshToken = await argon2.hash(refreshToken);
