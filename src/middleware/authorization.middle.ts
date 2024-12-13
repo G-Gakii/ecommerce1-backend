@@ -8,7 +8,7 @@ const authorizedRole = (role: string[]) => {
       return;
     }
     if (!role.includes(req.user.role)) {
-      res.status(403).json({ message: "Forbidden : insufficient role" });
+      res.status(403).json({ message: "Forbidden : Unathorized" });
       return;
     }
     next();

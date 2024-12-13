@@ -116,9 +116,24 @@ export const UpdateProduct = async (req: AuthorizedRequest, res: Response) => {
   }
 };
 
-export const deleteProduct = async (req: Request, res: Response) => {
+export const deleteProduct = async (req: AuthorizedRequest, res: Response) => {
   try {
     const { id } = req.params;
+    if (!req.user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    const product = await pool.query(getOneProductQuery, [id]);
+    if (product.rowCount === 0) {
+      res.status(404).json({ message: "Product not found" });
+      return;
+    }
+    
+
+    if (product.rows[0].user_id !== req.user.id) {
+      res.status(401).json({ message: "Unathorized" });
+      return;
+    }
     await pool.query(DeleteProductQuery, [id]);
     res.status(200).json("Product deleted successfully");
   } catch (error) {
