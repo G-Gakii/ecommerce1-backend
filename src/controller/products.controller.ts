@@ -14,9 +14,11 @@ import { AuthorizedRequest } from "../interface/auth.interface";
 
 export const addProduct = async (req: AuthorizedRequest, res: Response) => {
   try {
-    const { name, description, price, quantity } = req.body;
-    if (!name || !description || !price || !quantity) {
-      res.status(400).json({ message: "All fields required" });
+    const products = req.body;
+    if (!Array.isArray(products)) {
+      res
+        .status(400)
+        .json({ message: "request body must be an array of products" });
       return;
     }
     if (!req.user) {
@@ -24,15 +26,23 @@ export const addProduct = async (req: AuthorizedRequest, res: Response) => {
       return;
     }
     const userId = req.user.id;
-    const newProduct = await pool.query(addProductQueries, [
-      name,
-      description,
-      price,
-      quantity,
-      userId,
-    ]);
 
-    res.status(201).json(newProduct.rows[0]);
+    for (let product of products) {
+      const { name, description, price, quantity } = product;
+      if (!name || !description || !price || !quantity) {
+        res.status(400).json({ message: "All fields required" });
+        return;
+      }
+      const newProduct = await pool.query(addProductQueries, [
+        name,
+        description,
+        price,
+        quantity,
+        userId,
+      ]);
+    }
+
+    res.status(201).json(products);
   } catch (error) {
     let err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });
