@@ -4,6 +4,7 @@ export const addProductQueries =
 export const getProductsQuery = "SELECT * FROM products ";
 
 export const getOneProductQuery = "SELECT * FROM products WHERE product_id=$1";
+export const getOneProductByNameQuery = "SELECT * FROM products WHERE name=$1";
 export const getProductsBySellerQuery =
   "SELECT * FROM products WHERE owner_id=$1";
 

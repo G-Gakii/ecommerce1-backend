@@ -12,6 +12,7 @@ import { generateToken, refreshTokenfn } from "../token/token";
 import { JwtPayload } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
+import { AuthorizedRequest } from "../interface/auth.interface";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
@@ -87,31 +88,15 @@ export const logIn = async (req: Request, res: Response) => {
   }
 };
 
-export const logOut = async (req: Request, res: Response) => {
+export const logOut = async (req: AuthorizedRequest, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      res.status(401).json({ message: "unathorized" });
+    if (!req.user) {
+      res.status(404).json({ message: "User not found" });
       return;
     }
-    const bearerToken = authHeader?.split(" ");
-    const token = bearerToken[1];
-
-    let decoded: JwtPayload | string;
-
-    decoded = jwt.verify(token, process.env.SECRET_TOKEN as string);
-
-    if (typeof decoded === "object" && decoded !== null && "id" in decoded) {
-      const userId = decoded.id;
-      const user = await pool.query(userByIdQuery, [userId]);
-      if (user.rows.length === 0) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
-
-      await pool.query(updateRefreshTokenQuery, [null, userId]);
-      res.status(200).json({ message: "logged out successfully" });
-    }
+    const userId = req.user.user_id;
+    await pool.query(updateRefreshTokenQuery, [null, userId]);
+    res.status(200).json({ message: "logged out successfully" });
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });

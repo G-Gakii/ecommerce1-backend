@@ -6,6 +6,7 @@ import "dotenv/config";
 import {
   addProductQueries,
   DeleteProductQuery,
+  getOneProductByNameQuery,
   getOneProductQuery,
   getProductsBySellerQuery,
   getProductsQuery,
@@ -38,8 +39,22 @@ export const addProduct = async (req: AuthorizedRequest, res: Response) => {
         res.status(400).json({ message: "All fields required" });
         return;
       }
+      const existingProduct = await pool.query(getOneProductByNameQuery, [
+        name,
+      ]);
+
+      if (
+        existingProduct.rowCount &&
+        owner_id === existingProduct.rows[0].owner_id
+      ) {
+        res
+          .status(409)
+          .json({ Message: "Product already exist.Do you want to update" });
+        return;
+      }
       const productId = uuidv4();
       const created_at = new Date();
+
       const updated_at = new Date();
       const newProduct = await pool.query(addProductQueries, [
         productId,
