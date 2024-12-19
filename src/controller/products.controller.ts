@@ -7,11 +7,14 @@ import {
   addProductQueries,
   DeleteProductQuery,
   getOneProductQuery,
+  getProductsBySellerQuery,
   getProductsQuery,
   updateProductQuery,
 } from "../queries/products.queries";
 import { AuthorizedRequest } from "../interface/auth.interface";
-import { log } from "console";
+import { v4 as uuidv4 } from "uuid";
+
+import { userByIdQuery } from "../queries/user.queries";
 
 export const addProduct = async (req: AuthorizedRequest, res: Response) => {
   try {
@@ -26,20 +29,28 @@ export const addProduct = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    const userId = req.user.id;
+
+    const owner_id = req.user.user_id;
 
     for (let product of products) {
-      const { name, description, price, quantity } = product;
-      if (!name || !description || !price || !quantity) {
+      const { name, description, price, quantity, category } = product;
+      if (!name || !description || !price || !quantity || !category) {
         res.status(400).json({ message: "All fields required" });
         return;
       }
+      const productId = uuidv4();
+      const created_at = new Date();
+      const updated_at = new Date();
       const newProduct = await pool.query(addProductQueries, [
+        productId,
         name,
         description,
         price,
         quantity,
-        userId,
+        category,
+        owner_id,
+        created_at,
+        updated_at,
       ]);
     }
 
@@ -63,6 +74,7 @@ export const getProducts = async (req: Request, res: Response) => {
 export const getOneProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
     const product = await pool.query(getOneProductQuery, [id]);
     if (!product.rows[0]) {
       res.status(404).json({ message: "product not found" });
@@ -83,9 +95,9 @@ export const UpdateProduct = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    const userId = req.user.id;
-    const { name, description, price, quantity } = req.body;
-    if (!name && !description && !price && !quantity) {
+    const userId = req.user.user_id;
+    const { name, description, price, quantity, category } = req.body;
+    if (!name && !description && !price && !quantity && !category) {
       res.status(400).json({ message: "All fields required" });
       return;
     }
@@ -94,8 +106,11 @@ export const UpdateProduct = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "Product not found" });
       return;
     }
+    const created_at = product.rows[0].created_at;
 
-    if (product.rows[0].user_id !== req.user.id) {
+    const updated_at = new Date();
+
+    if (product.rows[0].owner_id !== userId) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
@@ -106,6 +121,11 @@ export const UpdateProduct = async (req: AuthorizedRequest, res: Response) => {
       price,
       quantity,
       userId,
+
+      category,
+      created_at,
+      updated_at,
+      id,
     ]);
     res.status(200).json(updatedProduct.rows[0]);
     return;
@@ -128,9 +148,8 @@ export const deleteProduct = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "Product not found" });
       return;
     }
-    
 
-    if (product.rows[0].user_id !== req.user.id) {
+    if (product.rows[0].owner_id !== req.user.user_id) {
       res.status(401).json({ message: "Unathorized" });
       return;
     }

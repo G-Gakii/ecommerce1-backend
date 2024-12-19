@@ -21,8 +21,10 @@ const autheticateUser = async (
     const token = bearerToken[1];
     try {
       const decode = jwt.verify(token, process.env.SECRET_TOKEN as string);
+
       if (typeof decode === "object" && decode !== null && "id" in decode) {
         const userId = decode.id;
+
         const userResult = await pool.query(userByIdQuery, [userId]);
         const user = userResult.rows[0];
         if (!user) {

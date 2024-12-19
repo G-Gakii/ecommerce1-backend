@@ -13,22 +13,18 @@ const router = Router();
 
 router.get("/product", getProducts);
 router.get("/product/:id", autheticateUser, getOneProduct);
-router.post(
-  "/product",
-  autheticateUser,
-  authorizedRole(["seller"]),
-  addProduct
-);
+
+router.post("/product", autheticateUser, authorizedRole(["shop"]), addProduct);
 router.put(
   "/product/:id",
   autheticateUser,
-  authorizedRole(["seller"]),
+  authorizedRole(["shop"]),
   UpdateProduct
 );
 router.delete(
   "/product/:id",
   autheticateUser,
-  authorizedRole(["seller"]),
+  authorizedRole(["shop"]),
   deleteProduct
 );
 export default router;

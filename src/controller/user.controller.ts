@@ -11,6 +11,7 @@ import * as argon2 from "argon2";
 import { generateToken, refreshTokenfn } from "../token/token";
 import { JwtPayload } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
@@ -26,8 +27,15 @@ export const registerUser = async (req: Request, res: Response) => {
       return;
     }
     const hashedPassword = await argon2.hash(password);
-    const user = await pool.query(addUserQuery, [email, hashedPassword, role]);
-    const userId = user.rows[0].id;
+    const userId = uuidv4();
+    const created_at = new Date();
+    const user = await pool.query(addUserQuery, [
+      email,
+      hashedPassword,
+      role,
+      userId,
+      created_at,
+    ]);
 
     const accessToken = generateToken(userId);
     const refreshToken = refreshTokenfn(userId);
@@ -64,7 +72,8 @@ export const logIn = async (req: Request, res: Response) => {
       return;
     }
 
-    const userId = appUser.id;
+    const userId = appUser.user_id;
+
     const accessToken = generateToken(userId);
     const refreshToken = refreshTokenfn(userId);
     const hashedRefreshToken = await argon2.hash(refreshToken);

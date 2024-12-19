@@ -12,6 +12,8 @@ import {
   updateCartItem,
   UpdateQuantityQuery,
 } from "../queries/cart.queries";
+import { v4 as uuidv4 } from "uuid";
+import { addOrdersQuery } from "../queries/order.queries";
 
 export const addToCart = async (req: AuthorizedRequest, res: Response) => {
   try {
@@ -24,16 +26,23 @@ export const addToCart = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    const userId = req.user.id;
+    const buyer_id = req.user.user_id;
+
+    const cart_id = uuidv4();
+    const created_at = new Date();
+    const updated_at = new Date();
     const product = await pool.query(getOneProductQuery, [product_id]);
     if (product.rowCount === 0 || product.rows[0].quantity < quantity) {
       res.status(400).json({ message: "Insufficient product quantity" });
       return;
     }
     const cartItem = await pool.query(addToCartQuery, [
-      userId,
+      cart_id,
+      buyer_id,
       product_id,
       quantity,
+      created_at,
+      updated_at,
     ]);
     res.status(201).json(cartItem.rows[0]);
   } catch (error) {
@@ -49,7 +58,7 @@ export const getCartItem = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    const userId = req.user.id;
+    const userId = req.user.user_id;
 
     const items = await pool.query(getItemInCartquery, [userId]);
     if (items.rowCount === 0) {
@@ -68,11 +77,12 @@ export const getCartItem = async (req: AuthorizedRequest, res: Response) => {
 export const UpdateCartItem = async (req: AuthorizedRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const cart_id = id;
     if (!req.user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    const userId = req.user.id;
+    const userId = req.user.user_id;
     const { product_id, quantity } = req.body;
     if (!product_id || !quantity) {
       res.status(400).json({ message: "All fields required" });
@@ -95,11 +105,13 @@ export const UpdateCartItem = async (req: AuthorizedRequest, res: Response) => {
         .json({ message: "You are not authorized to update this item" });
       return;
     }
+    const updated_at = new Date();
     const updatedItem = await pool.query(updateCartItem, [
       userId,
       product_id,
       quantity,
-      id,
+      updated_at,
+      cart_id,
     ]);
     res.status(200).json(updatedItem.rows[0]);
     return;
@@ -126,12 +138,12 @@ export const DeleteItemFromCart = async (
       res.status(404).json({ message: "User not found" });
       return;
     }
-    const userId = req.user.id;
+    const userId = req.user.user_id;
 
     if (userId !== cartItemToDelete.rows[0].user_id) {
       res
         .status(401)
-        .json({ message: "You are not authorized to update this item" });
+        .json({ message: "You are not authorized to delete this item" });
       return;
     }
     await pool.query(deleteCartItemQuery, [id]);
@@ -149,7 +161,7 @@ export const checkOut = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "user not found" });
       return;
     }
-    const userId = req.user.id;
+    const userId = req.user.user_id;
     const cartItemsResult = await pool.query(getItemInCartquery, [userId]);
     if (cartItemsResult.rowCount === 0) {
       res.status(200).json({ message: "cart is empty" });
@@ -175,19 +187,42 @@ export const checkOut = async (req: AuthorizedRequest, res: Response) => {
         return;
       }
       checkedOutProducts.push({
+        product_id: product.product_id,
+        owner_id: product.owner_id,
         name: product.name,
         quantity: item.quantity,
         price: product.price,
-        descrption: product.description,
+        description: product.description,
+        category: product.category,
+        created_at: product.created_at,
+        updated_at: product.updated_at,
       });
       await pool.query(UpdateQuantityQuery, [item.quantity, item.product_id]);
+    }
+
+    for (let checkoutItem of checkedOutProducts) {
+      const orderId = uuidv4();
+      const created_at = new Date();
+      const updated_at = new Date();
+      await pool.query(addOrdersQuery, [
+        orderId,
+        checkoutItem.product_id,
+        userId,
+        checkoutItem.quantity,
+        checkoutItem.price,
+        checkoutItem.description,
+        checkoutItem.category,
+        created_at,
+        updated_at,
+        checkoutItem.owner_id,
+      ]);
     }
     await pool.query(deleteUserItemsQuery, [userId]);
     res.status(200).json(checkedOutProducts);
     return;
   } catch (error) {
     const err = error as Error;
-    res.status(500).json({ message: `Internal server error${err.message}` });
+    res.status(500).json({ message: `Internal server error:${err.message}` });
     return;
   }
 };
