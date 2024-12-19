@@ -9,6 +9,7 @@ import {
   deleteUserItemsQuery,
   getCartItemById,
   getItemInCartquery,
+  getProductByID,
   updateCartItem,
   UpdateQuantityQuery,
 } from "../queries/cart.queries";
@@ -27,6 +28,16 @@ export const addToCart = async (req: AuthorizedRequest, res: Response) => {
       return;
     }
     const buyer_id = req.user.user_id;
+    const existingProduct = await pool.query(getProductByID, [product_id]);
+    if (
+      existingProduct.rowCount &&
+      buyer_id === existingProduct.rows[0].buyer_id
+    ) {
+      res.status(409).json({
+        message: "Product already exist in cart.Do you want to updated?",
+      });
+      return;
+    }
 
     const cart_id = uuidv4();
     const created_at = new Date();
@@ -99,7 +110,7 @@ export const UpdateCartItem = async (req: AuthorizedRequest, res: Response) => {
       res.status(404).json({ message: "Cart item not found" });
       return;
     }
-    if (cartItem.rows[0].user_id !== userId) {
+    if (cartItem.rows[0].buyer_id !== userId) {
       res
         .status(401)
         .json({ message: "You are not authorized to update this item" });
@@ -140,7 +151,7 @@ export const DeleteItemFromCart = async (
     }
     const userId = req.user.user_id;
 
-    if (userId !== cartItemToDelete.rows[0].user_id) {
+    if (userId !== cartItemToDelete.rows[0].buyer_id) {
       res
         .status(401)
         .json({ message: "You are not authorized to delete this item" });
