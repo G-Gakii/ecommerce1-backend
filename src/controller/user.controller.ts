@@ -16,6 +16,8 @@ import { AuthorizedRequest } from "../interface/auth.interface";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
+    console.log("starting to register");
+
     const { email, password, role } = req.body;
     if (!email && !password && !role) {
       res.status(400).json({ message: "All fields required" });
