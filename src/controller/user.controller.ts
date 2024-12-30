@@ -45,6 +45,7 @@ export const registerUser = async (req: Request, res: Response) => {
     await pool.query(updateRefreshTokenQuery, [hashedRefreshToken, userId]);
     res.status(201).json({ accessToken, refreshToken });
   } catch (error) {
+    console.error("Error registering user:", error);
     const err = error as Error;
     res.status(500).json({ message: `internal server error ${err.message} ` });
   }
