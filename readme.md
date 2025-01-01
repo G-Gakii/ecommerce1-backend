@@ -29,7 +29,7 @@ Shops manage their product inventory by adding, modifying, and removing items. B
    - cd ecommerce1-backend
 2. Install dependencies:
    - npm start
-3. Create tables
+3. Create database tables
 
 ### users
 ```
