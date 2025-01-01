@@ -82,7 +82,7 @@ Shops manage their product inventory by adding, modifying, and removing items. B
 5. Create a .env file and add your environment variables
 ```
 PORT=<Add PORT>
- PG_USER=<Add PG_USER>
+PG_USER=<Add PG_USER>
 PG_HOST=<Add PG_HOST>
 PG_DATABASE=<Add PG_DATABASE>
 PG_PASSWORD=<Add PG_PASSWORD>
