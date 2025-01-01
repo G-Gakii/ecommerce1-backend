@@ -33,7 +33,7 @@ Shops manage their product inventory by adding, modifying, and removing items. B
 
 ### users
 ```
-user_id      | character varying(255)      |           | not null | primary key
+ user_id      | character varying(255)      |           | not null | primary key
  email        | character varying(255)      |           | not null | 
  password     | character varying(255)      |           | not null | 
  refreshtoken | character varying(255)      |           |          | 
@@ -43,7 +43,7 @@ user_id      | character varying(255)      |           | not null | primary key
 - Create enum for myrole: values  are (buyer, shop)
 ### products
 ```
-product_id  | character varying(255)      |           | not null | primary key
+ product_id  | character varying(255)      |           | not null | primary key
  name        | character varying(255)      |           | not null | 
  category    | mycategory                  |           | not null | 
  description | text                        |           |          | 
@@ -56,7 +56,7 @@ product_id  | character varying(255)      |           | not null | primary key
 - Create enum for mycategory : values  are (electronics, arts, kitchen, garden, office, beauty, game, garden, exercise)
 ### cart
 ```
-cart_id    | character varying(255)      |           | not null | primary key
+ cart_id    | character varying(255)      |           | not null | primary key
  product_id | character varying(255)      |           |          | foreign key
  quantity   | integer                     |           | not null | 
  created_at | timestamp without time zone |           | not null | 
@@ -80,7 +80,6 @@ cart_id    | character varying(255)      |           | not null | primary key
 
 ```
 5. Create a .env file and add your environment variables
-   // list env
 ```
 PORT=<Add PORT>
  PG_USER=<Add PG_USER>
