@@ -97,34 +97,34 @@ DATABASE_URL=<Add DATABASE_URL>
 
 ## API Endpoints
 
-main url:localhost:3000/api/ecommerce
+main URL: `localhost:3000/api/ecommerce`
 
 ### Authentication
 
-- register: /register
-- login: /login
-- log out: /logout
+- register: `POST: /register`
+- login: `POST: /login`
+- log out: `   POST: /logout`
 
 ### Products
 
-- get Products: /product
-- get one product: /product/:id
-- get products by shop: /seller
-- Add Products: /product
-- update product: /product/:id
-- delete product: /product/:id
+- get Products: `GET: /product`
+- get one product: `GET: /product/:id`
+- get products by shop: `GET: /seller`
+- Add Products: `POST: /product`
+- update product: `PUT: /product/:id`
+- delete product: `DELETE: /product/:id`
 
 ### Cart
 
-- add to cart: /cart
-- get cart items: /cart
-- update cart items: /cart:id
-- delete cart items: /cart:id
-- checkout: /cart/checkout
+- add to cart: `POST: /cart`
+- get cart items: `GET: /cart`
+- update cart items:`UPDATE: /cart:id`
+- delete cart items: `DELETE: /cart:id`
+- checkout: `POST: /cart/checkout`
 
 ### Orders
 
-- get order by shop: /orders
-- delete orders: /orders/:id
+- get order by shop: `GET: /orders`
+- delete orders: `DELETE: /orders/:id`
 
 NB: item are added to the order table during checkout
