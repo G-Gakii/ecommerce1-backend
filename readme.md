@@ -46,8 +46,8 @@ Shops manage their product inventory by adding, modifying, and removing items. B
  product_id  | character varying(255)      |           | not null | primary key
  name        | character varying(255)      |           | not null | 
  category    | mycategory                  |           | not null | 
- description | text                        |           |          | 
- price       | numeric(10,2)               |           |          | 
+ description | text                        |           | not null         | 
+ price       | numeric(10,2)               |           | not null        | 
  quantity    | integer                     |           | not null | 
  owner_id    | character varying(255)      |           |          | foreign key
  created_at  | timestamp without time zone |           | not null | 
