@@ -8,6 +8,7 @@ export const getProductsBySeller = async (
   res: Response
 ) => {
   try {
+    await pool.query("BEGIN");
     if (!req.user) {
       res.status(404).json({ message: "User  not found" });
       return;
@@ -18,9 +19,13 @@ export const getProductsBySeller = async (
       res.status(200).json({ message: "No product yet" });
       return;
     }
+    await pool.query("COMMIT");
     res.status(200).json(yourProducts.rows);
+    return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal Server error :${err.message}` });
+    return;
   }
 };

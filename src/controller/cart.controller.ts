@@ -18,6 +18,7 @@ import { addOrdersQuery } from "../queries/order.queries";
 
 export const addToCart = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const { product_id, quantity } = req.body;
     if (!product_id || !quantity) {
       res.status(400).json({ message: "All fields required" });
@@ -34,7 +35,7 @@ export const addToCart = async (req: AuthorizedRequest, res: Response) => {
       buyer_id === existingProduct.rows[0].buyer_id
     ) {
       res.status(409).json({
-        message: "Product already exist in cart.Do you want to updated?",
+        message: "Product already exist in cart.Do you want to edit?",
       });
       return;
     }
@@ -55,8 +56,10 @@ export const addToCart = async (req: AuthorizedRequest, res: Response) => {
       created_at,
       updated_at,
     ]);
+    await pool.query("COMMIT");
     res.status(201).json(cartItem.rows[0]);
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error${err.message}` });
     return;
@@ -65,6 +68,7 @@ export const addToCart = async (req: AuthorizedRequest, res: Response) => {
 
 export const getCartItem = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     if (!req.user) {
       res.status(404).json({ message: "User not found" });
       return;
@@ -76,9 +80,11 @@ export const getCartItem = async (req: AuthorizedRequest, res: Response) => {
       res.status(200).json({ message: "No item found" });
       return;
     }
+    await pool.query("COMMIT");
     res.status(200).json(items.rows);
     return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error${err.message}` });
     return;
@@ -87,6 +93,7 @@ export const getCartItem = async (req: AuthorizedRequest, res: Response) => {
 
 export const UpdateCartItem = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const { id } = req.params;
     const cart_id = id;
     if (!req.user) {
@@ -111,9 +118,7 @@ export const UpdateCartItem = async (req: AuthorizedRequest, res: Response) => {
       return;
     }
     if (cartItem.rows[0].buyer_id !== userId) {
-      res
-        .status(401)
-        .json({ message: "You are not authorized to update this item" });
+      res.status(401).json({ message: `Only owner can update the item` });
       return;
     }
     const updated_at = new Date();
@@ -124,9 +129,11 @@ export const UpdateCartItem = async (req: AuthorizedRequest, res: Response) => {
       updated_at,
       cart_id,
     ]);
+    await pool.query("COMMIT");
     res.status(200).json(updatedItem.rows[0]);
     return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error${err.message}` });
     return;
@@ -138,6 +145,7 @@ export const DeleteItemFromCart = async (
   res: Response
 ) => {
   try {
+    await pool.query("BEGIN");
     const { id } = req.params;
 
     const cartItemToDelete = await pool.query(getCartItemById, [id]);
@@ -158,8 +166,11 @@ export const DeleteItemFromCart = async (
       return;
     }
     await pool.query(deleteCartItemQuery, [id]);
+    await pool.query("COMMIT");
     res.status(200).json({ message: "item deleted successfuly" });
+    return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error${err.message}` });
     return;
@@ -168,6 +179,7 @@ export const DeleteItemFromCart = async (
 
 export const checkOut = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     if (!req.user) {
       res.status(404).json({ message: "user not found" });
       return;
@@ -229,9 +241,11 @@ export const checkOut = async (req: AuthorizedRequest, res: Response) => {
       ]);
     }
     await pool.query(deleteUserItemsQuery, [userId]);
+    await pool.query("COMMIT");
     res.status(200).json(checkedOutProducts);
     return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error:${err.message}` });
     return;

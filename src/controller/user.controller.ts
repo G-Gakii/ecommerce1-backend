@@ -16,8 +16,7 @@ import { AuthorizedRequest } from "../interface/auth.interface";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    console.log("starting to register");
-
+    await pool.query("BEGIN");
     const { email, password, role } = req.body;
     if (!email && !password && !role) {
       res.status(400).json({ message: "All fields required" });
@@ -45,9 +44,11 @@ export const registerUser = async (req: Request, res: Response) => {
     const hashedRefreshToken = await argon2.hash(refreshToken);
 
     await pool.query(updateRefreshTokenQuery, [hashedRefreshToken, userId]);
+    await pool.query("COMMIT");
     res.status(201).json({ accessToken, refreshToken });
+    return;
   } catch (error) {
-    console.error("Error registering user:", error);
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `internal server error ${err.message} ` });
   }
@@ -55,6 +56,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const logIn = async (req: Request, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const { email, password } = req.body;
     if (!email) {
       res.status(400).json({ message: "Email required" });
@@ -82,9 +84,11 @@ export const logIn = async (req: Request, res: Response) => {
     const refreshToken = refreshTokenfn(userId);
     const hashedRefreshToken = await argon2.hash(refreshToken);
     await pool.query(updateRefreshTokenQuery, [hashedRefreshToken, userId]);
+    await pool.query("COMMIT");
     res.status(200).json({ accessToken, refreshToken });
     return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json(`internal server error ${err.message}`);
     return;
@@ -93,14 +97,18 @@ export const logIn = async (req: Request, res: Response) => {
 
 export const logOut = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     if (!req.user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
     const userId = req.user.user_id;
     await pool.query(updateRefreshTokenQuery, [null, userId]);
+    await pool.query("COMMIT");
     res.status(200).json({ message: "logged out successfully" });
+    return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });
   }

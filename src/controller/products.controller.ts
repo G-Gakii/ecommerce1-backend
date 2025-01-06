@@ -19,6 +19,7 @@ import { userByIdQuery } from "../queries/user.queries";
 
 export const addProduct = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const products = req.body;
     if (!Array.isArray(products)) {
       res
@@ -47,9 +48,9 @@ export const addProduct = async (req: AuthorizedRequest, res: Response) => {
         existingProduct.rowCount &&
         owner_id === existingProduct.rows[0].owner_id
       ) {
-        res
-          .status(409)
-          .json({ Message: "Product already exist.Do you want to update" });
+        res.status(409).json({
+          Message: `${existingProduct.rows[0].name} already exist.`,
+        });
         return;
       }
       const productId = uuidv4();
@@ -70,7 +71,9 @@ export const addProduct = async (req: AuthorizedRequest, res: Response) => {
     }
 
     res.status(201).json(products);
+    await pool.query("COMMIT");
   } catch (error) {
+    await pool.query("ROLLBACK");
     let err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });
     return;
@@ -78,9 +81,12 @@ export const addProduct = async (req: AuthorizedRequest, res: Response) => {
 };
 export const getProducts = async (req: Request, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const products = await pool.query(getProductsQuery);
     res.status(200).json(products.rows);
+    await pool.query("COMMIT");
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });
   }
@@ -88,6 +94,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const getOneProduct = async (req: Request, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const { id } = req.params;
 
     const product = await pool.query(getOneProductQuery, [id]);
@@ -95,8 +102,11 @@ export const getOneProduct = async (req: Request, res: Response) => {
       res.status(404).json({ message: "product not found" });
       return;
     }
+    await pool.query("COMMIT");
     res.status(200).json(product.rows);
+    return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });
   }
@@ -104,6 +114,7 @@ export const getOneProduct = async (req: Request, res: Response) => {
 
 export const UpdateProduct = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const { id } = req.params;
 
     if (!req.user) {
@@ -142,9 +153,11 @@ export const UpdateProduct = async (req: AuthorizedRequest, res: Response) => {
       updated_at,
       id,
     ]);
+    await pool.query("COMMIT");
     res.status(200).json(updatedProduct.rows[0]);
     return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });
     return;
@@ -153,6 +166,7 @@ export const UpdateProduct = async (req: AuthorizedRequest, res: Response) => {
 
 export const deleteProduct = async (req: AuthorizedRequest, res: Response) => {
   try {
+    await pool.query("BEGIN");
     const { id } = req.params;
     if (!req.user) {
       res.status(404).json({ message: "User not found" });
@@ -169,8 +183,11 @@ export const deleteProduct = async (req: AuthorizedRequest, res: Response) => {
       return;
     }
     await pool.query(DeleteProductQuery, [id]);
+    await pool.query("COMMIT");
     res.status(200).json("Product deleted successfully");
+    return;
   } catch (error) {
+    await pool.query("ROLLBACK");
     const err = error as Error;
     res.status(500).json({ message: `Internal server error ${err.message}` });
   }
